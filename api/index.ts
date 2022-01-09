@@ -8,7 +8,7 @@ const isHtmlDebug = process.env.OG_HTML_DEBUG === '1';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
     try {
-        const parsedReq = parseRequest(req);
+        const parsedReq = await parseRequest(req);
         const html = getHtml(parsedReq);
         if (isHtmlDebug) {
             res.setHeader('Content-Type', 'text/html');

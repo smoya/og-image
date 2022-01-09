@@ -1,19 +1,20 @@
+import { AsyncAPIDocument, parse } from '@asyncapi/parser';
 import { IncomingMessage } from 'http';
-import { parse } from 'url';
+import { parse as urlParse } from 'url';
 import { ParsedRequest, Theme } from './types';
 
-export function parseRequest(req: IncomingMessage) {
+export async function parseRequest(req: IncomingMessage) {
     console.log('HTTP ' + req.url);
-    const { pathname, query } = parse(req.url || '/', true);
-    const { fontSize, images, widths, heights, theme, md } = (query || {});
+    const { pathname, query } = urlParse(req.url || '/', true);
+    const { images, widths, heights, theme, md, base64 } = (query || {});
 
-    if (Array.isArray(fontSize)) {
-        throw new Error('Expected a single fontSize');
-    }
     if (Array.isArray(theme)) {
         throw new Error('Expected a single theme');
     }
-    
+    if (Array.isArray(base64)) {
+        throw new Error('Expected a single base64');
+    }
+
     const arr = (pathname || '/').slice(1).split('.');
     let extension = '';
     let text = '';
@@ -31,10 +32,10 @@ export function parseRequest(req: IncomingMessage) {
         text: decodeURIComponent(text),
         theme: theme === 'dark' ? 'dark' : 'light',
         md: md === '1' || md === 'true',
-        fontSize: fontSize || '96px',
         images: getArray(images),
         widths: getArray(widths),
         heights: getArray(heights),
+        asyncapi: await parseAsyncAPI(base64 || ''),
     };
     parsedRequest.images = getDefaultImages(parsedRequest.images, parsedRequest.theme);
     return parsedRequest;
@@ -52,14 +53,21 @@ function getArray(stringOrArray: string[] | string | undefined): string[] {
 
 function getDefaultImages(images: string[], theme: Theme): string[] {
     const defaultImage = theme === 'light'
-        ? 'https://assets.vercel.com/image/upload/front/assets/design/vercel-triangle-black.svg'
-        : 'https://assets.vercel.com/image/upload/front/assets/design/vercel-triangle-white.svg';
+        ? 'https://svgshare.com/i/dNo.svg'
+        : 'https://svgshare.com/i/dNo.svg';
 
     if (!images || !images[0]) {
         return [defaultImage];
     }
-    if (!images[0].startsWith('https://assets.vercel.com/') && !images[0].startsWith('https://assets.zeit.co/')) {
-        images[0] = defaultImage;
-    }
+    // if (!images[0].startsWith('https://assets.vercel.com/') && !images[0].startsWith('https://assets.zeit.co/')) {
+    //     images[0] = defaultImage;
+    // }
     return images;
 }
+
+async function parseAsyncAPI(base64: string): Promise<AsyncAPIDocument> {
+    let decoded = Buffer.from(base64, 'base64').toString();
+    return await parse(decoded);
+}
+
+

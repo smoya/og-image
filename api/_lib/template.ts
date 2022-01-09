@@ -1,17 +1,19 @@
 
+import { AsyncAPIDocument } from '@asyncapi/parser';
 import { readFileSync } from 'fs';
 import marked from 'marked';
 import { sanitizeHtml } from './sanitizer';
 import { ParsedRequest } from './types';
-const twemoji = require('twemoji');
-const twOptions = { folder: 'svg', ext: '.svg' };
-const emojify = (text: string) => twemoji.parse(text, twOptions);
+
+import '../_fonts/Inter-Regular.woff2';
+import '../_fonts/Inter-Bold.woff2';
+import '../_fonts/Vera-Mono.woff2';
 
 const rglr = readFileSync(`${__dirname}/../_fonts/Inter-Regular.woff2`).toString('base64');
 const bold = readFileSync(`${__dirname}/../_fonts/Inter-Bold.woff2`).toString('base64');
 const mono = readFileSync(`${__dirname}/../_fonts/Vera-Mono.woff2`).toString('base64');
 
-function getCss(theme: string, fontSize: string) {
+function getCss(theme: string) {
     let background = 'white';
     let foreground = 'black';
     let radial = 'lightgray';
@@ -94,44 +96,61 @@ function getCss(theme: string, fontSize: string) {
         vertical-align: -0.1em;
     }
     
-    .heading {
+    .title {
         font-family: 'Inter', sans-serif;
-        font-size: ${sanitizeHtml(fontSize)};
+        font-size: 100px;
         font-style: normal;
         color: ${foreground};
         line-height: 1.8;
-    }`;
+    }
+    
+    .text {
+        font-family: 'Inter', sans-serif;
+        font-size: 50px;
+        font-style: normal;
+        color: ${foreground};
+        line-height: 1.8;
+    }
+    `;
 }
 
 export function getHtml(parsedReq: ParsedRequest) {
-    const { text, theme, md, fontSize, images, widths, heights } = parsedReq;
+    const { theme, images, widths, heights, asyncapi } = parsedReq;
     return `<!DOCTYPE html>
 <html>
     <meta charset="utf-8">
     <title>Generated Image</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        ${getCss(theme, fontSize)}
+        ${getCss(theme)}
     </style>
     <body>
         <div>
             <div class="spacer">
             <div class="logo-wrapper">
                 ${images.map((img, i) =>
-                    getPlusSign(i) + getImage(img, widths[i], heights[i])
-                ).join('')}
+        getImage(img, widths[i], heights[i])
+    ).join('')}
             </div>
+            <div class="title">${asyncapi ? asyncapi.info().title() : ''} ${asyncapi ? asyncapi.info().version() : ''}</div>
+            <div class="text">${asyncapi ? 
+                asyncapi.info().hasDescription() ?
+                    marked(asyncapi.info().description() || '') 
+                : ''
+            : ''}</div>
             <div class="spacer">
-            <div class="heading">${emojify(
-                md ? marked(text) : sanitizeHtml(text)
-            )}
-            </div>
+            <div class="text">${getStats(asyncapi)}</div>
         </div>
     </body>
 </html>`;
 }
 
-function getImage(src: string, width ='auto', height = '225') {
+function getStats(asyncapi: AsyncAPIDocument): string {
+    return `${asyncapi.hasServers() ? Object.keys(asyncapi.servers()).length : 'No'} Servers ` +
+        `| ${asyncapi.hasChannels() ? Object.keys(asyncapi.channels()).length : 'No'} Channels ` +
+        `| ${asyncapi.hasMessages() ? asyncapi.allMessages().size : 'No'} Messages`;
+}
+function getImage(src: string, width = 'auto', height = '225') {
     return `<img
         class="logo"
         alt="Generated Image"
@@ -139,8 +158,4 @@ function getImage(src: string, width ='auto', height = '225') {
         width="${sanitizeHtml(width)}"
         height="${sanitizeHtml(height)}"
     />`
-}
-
-function getPlusSign(i: number) {
-    return i === 0 ? '' : '<div class="plus">+</div>';
 }

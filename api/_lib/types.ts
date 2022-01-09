@@ -1,3 +1,5 @@
+import { AsyncAPIDocument } from "@asyncapi/parser";
+
 export type FileType = 'png' | 'jpeg';
 export type Theme = 'light' | 'dark';
 
@@ -6,8 +8,8 @@ export interface ParsedRequest {
     text: string;
     theme: Theme;
     md: boolean;
-    fontSize: string;
     images: string[];
     widths: string[];
     heights: string[];
+    asyncapi: AsyncAPIDocument;
 }
