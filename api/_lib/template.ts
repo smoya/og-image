@@ -5,10 +5,6 @@ import { marked } from 'marked';
 import { sanitizeHtml } from './sanitizer';
 import { ParsedRequest } from './types';
 
-import '../_fonts/Inter-Regular.woff2';
-import '../_fonts/Inter-Bold.woff2';
-import '../_fonts/Vera-Mono.woff2';
-
 const rglr = readFileSync(`${__dirname}/../_fonts/Inter-Regular.woff2`).toString('base64');
 const bold = readFileSync(`${__dirname}/../_fonts/Inter-Bold.woff2`).toString('base64');
 const mono = readFileSync(`${__dirname}/../_fonts/Vera-Mono.woff2`).toString('base64');
